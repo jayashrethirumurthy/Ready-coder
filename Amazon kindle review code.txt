@@ -1,0 +1,197 @@
+In [147]: 
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.offline as py
+color = sns.color_palette()
+import plotly.graph_objs as go
+py.init_notebook_mode(connected=True)
+import plotly.tools as tls
+import warnings
+warnings.filterwarnings('ignore')
+import os
+os.listdir("../input")
+
+Out[147]:
+['kindle_reviews.csv', 'kindle_reviews.json']
+
+Unnamed: 0	asin	helpful	overall	reviewText	reviewTime	reviewerID	reviewerName	summary	unixReviewTime
+0	0	B000F83SZQ	[0, 0]	5	I enjoy vintage books and movies so I enjoyed ...	05 5, 2014	A1F6404F1VG29J	Avidreader	Nice vintage story	1399248000
+1	1	B000F83SZQ	[2, 2]	4	This book is a reissue of an old one; the auth...	01 6, 2014	AN0N05A9LIJEQ	critters	Different...	1388966400
+2	2	B000F83SZQ	[2, 2]	4	This was a fairly interesting read. It had ol...	04 4, 2014	A795DMNCJILA6	dot	Oldie	1396569600
+3	3	B000F83SZQ	[1, 1]	5	I'd never read any of the Amy Brewster mysteri...	02 19, 2014	A1FV0SX13TWVXQ	Elaine H. Turley "Montana Songbird"	I really liked it.	1392768000
+4	4	B000F83SZQ	[0, 1]	4	If you like period pieces - clothing, lingo, y...	03 19, 2014	A3SPTOKDG7WBLN	Father Dowling Fan	Period Mystery	1395187200
+
+In [ ]:
+df.drop('Unnamed: 0',axis=1,inplace=True)
+
+In [149]:
+df.shape
+
+Out[149]:
+(982619, 10)
+
+In [150]:
+df.isnull().sum()
+
+Out[150]:
+Unnamed: 0           0
+asin                 0
+helpful              0
+overall              0
+reviewText          22
+reviewTime           0
+reviewerID           0
+reviewerName      3816
+summary              1
+unixReviewTime       0
+dtype: int64
+
+In [151]:
+df.dtypes
+
+Out[151]:
+Unnamed: 0         int64
+asin              object
+helpful           object
+overall            int64
+reviewText        object
+reviewTime        object
+reviewerID        object
+reviewerName      object
+summary           object
+unixReviewTime     int64
+dtype: object
+
+In [155]:
+df=df.dropna(subset=['reviewText'])
+
+In [159]:
+cnt_srs = df['overall'].value_counts().head()
+trace = go.Bar(
+    y=cnt_srs.index[::-1],
+    x=cnt_srs.values[::-1],
+    orientation = 'v',
+    marker=dict(
+        color=cnt_srs.values[::-1],
+        colorscale = 'Blues',
+        reversescale = True
+    ),
+)
+
+layout = dict(
+    title='Ratings distribution',
+    )
+data = [trace]
+fig = go.Figure(data=data, layout=layout)
+py.iplot(fig, filename="Ratings")
+
+In [127]:
+from wordcloud import WordCloud, STOPWORDS
+stopwords = set(STOPWORDS)
+
+def show_wordcloud(data, title = None):
+    wordcloud = WordCloud(
+        background_color='white',
+        stopwords=stopwords,
+        max_words=200,
+        max_font_size=40, 
+        scale=3,
+        random_state=1# chosen at random by flipping a coin; it was heads
+).generate(str(data))
+
+    fig = plt.figure(1, figsize=(15, 15))
+    plt.title('POSITIVE REVIEWS'"\n")
+    plt.axis('off')
+    if title: 
+        fig.suptitle(title, fontsize=20)
+        fig.subplots_adjust(top=2.3)
+
+    plt.imshow(wordcloud)
+    plt.show()
+
+show_wordcloud(df['reviewText'])
+
+POSITIVE REVIEWS...
+
+In [128]:
+df = df[df['overall'] != 3]
+df['Positively Rated'] = np.where(df['overall'] > 3, 1, 0)
+df['Positively Rated'].mean()
+
+Out [128]:
+0.9355282692767632
+
+In [129]:
+from wordcloud import WordCloud, STOPWORDS
+stopwords = set(STOPWORDS)
+
+def show_wordcloud(data, title = None):
+    wordcloud = WordCloud(
+        background_color='white',
+        stopwords=stopwords,
+        max_words=200,
+        max_font_size=40, 
+        scale=3,
+        random_state=1 # chosen at random by flipping a coin; it was heads
+).generate(str(data))
+
+    fig = plt.figure(1, figsize=(15, 15))
+    plt.title('NEGATIVE REVIEWS'"\n")
+    plt.axis('off')
+    if title: 
+        fig.suptitle(title, fontsize=20)
+        fig.subplots_adjust(top=2.3)
+
+    plt.imshow(wordcloud)
+    plt.show()
+
+show_wordcloud(df['summary'])
+
+NEGATIVE REVIEWS....
+
+In [130]:
+df = df[df['overall'] != 3]
+df['Negatively Rated'] = np.where(df['overall'] < 3, 1, 0)
+df['Negatively Rated'].mean()
+
+Out [130]:
+0.06447173072323681
+
+In [157]:
+df['overall_reviews']=df['overall'].value_counts().head()
+df['overall'].value_counts()
+Out[157]:
+5    575246
+4    254010
+3     96193
+2     34130
+1     23018
+Name: overall, dtype: int64
+
+In [98]:
+sns.set(font_scale=2.0)
+
+g = sns.FacetGrid(df,col='overall',size=5)
+g.map(plt.hist,'reviews_length')
+Out[98]:
+<seaborn.axisgrid.FacetGrid at 0x7faee3524f28>
+
+In [102]:
+sns.set(font_scale=1.4)
+plt.figure(figsize = (10,5))
+sns.heatmap(df.corr(),cmap='coolwarm',annot=True,linewidths=.5)
+Out[102]:
+<matplotlib.axes._subplots.AxesSubplot at 0x7faee304c7f0>
+
+In [161]:
+df['overall_reviews'].fillna("Review N/A",inplace=True)
+In [160]:
+plt.figure(figsize=(10,8))
+ax=sns.countplot(df['overall'])
+ax.set_xlabel(xlabel="People's Reviews",fontsize=17)
+ax.set_ylabel(ylabel='No. of Reviews',fontsize=17)
+ax.axes.set_title('Genuine No. of Reviews',fontsize=17)
+ax.tick_params(labelsize=13)
+
